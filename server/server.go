@@ -11,9 +11,13 @@ const (
 
 	SERVER_HOST = "localhost"
 	SERVER_PORT = "9988"
-	SERVER_TYPE = "tcp"
-	
+	SERVER_TYPE = "tcp"	
 )
+
+type brokerClient struct {
+	id string
+	connection net.Conn
+}
 
 var payloadCommands = map[string]payloadCommand {
 		"PUB": publish,	
@@ -43,17 +47,20 @@ func main(){
 		if err != nil {
 			fmt.Println("Error accepting connection!", err.Error())
 		}
-		go handleBrokerConnection(connection)	
+		var client brokerClient
+		client.id = "exampleId"
+		client.connection = connection
+		go handleBrokerConnection(client)	
 
 
 }
 }
-func handleBrokerConnection(connection net.Conn){
+func handleBrokerConnection(client brokerClient){
 
 		fmt.Println("Client Connected")
 		buffer := make([]byte, 1024)
 		for {
-			messageLength, err := connection.Read(buffer)
+			messageLength, err := client.connection.Read(buffer)
 			if err != nil {
 				fmt.Println("Had problems reading from buffer!")
 				break;	
