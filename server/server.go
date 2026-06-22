@@ -8,11 +8,24 @@ import (
 
 const (
 
+
 	SERVER_HOST = "localhost"
 	SERVER_PORT = "9988"
 	SERVER_TYPE = "tcp"
-
+	
 )
+
+var payloadCommands = map[string]payloadCommand {
+		"PUB": publish,	
+
+	}
+
+type payloadCommand func(string, string)
+
+func publish(topic string, payload string){
+	fmt.Println(topic + ": " + payload)
+}
+
 
 func main(){
 
@@ -65,5 +78,9 @@ func handleMessage(message string){
 
 }
 func handlePayloadCommand(parts []string){
+	method, ok := payloadCommands[parts[0]]	
+	if ok {
+		method(parts[1],parts[2])
+	}
 }
 func handleCommandWithoutPayload(parts []string){}
