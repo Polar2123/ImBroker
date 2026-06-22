@@ -29,17 +29,23 @@ func main(){
 		if err != nil {
 			fmt.Println("Error accepting connection!", err.Error())
 		}
+		go handleBrokerConnection(connection)	
+
+
+}
+}
+func handleBrokerConnection(connection net.Conn){
+
 		fmt.Println("Client Connected")
 		buffer := make([]byte, 1024)
-
-		messageLength, err := connection.Read(buffer)
-		if err != nil {
-
-			fmt.Println("Couldn't read message from connection!", err.Error())
+		for {
+			messageLength, err := connection.Read(buffer)
+			if err != nil {
+				fmt.Println("Had problems reading from buffer!")
+				break;	
+			}		
+			fmt.Println(string(buffer[:messageLength]))
 		}
-		fmt.Println(string(buffer[:messageLength]))
+		fmt.Println("A connection is closing!")
 		
-	}
-
-
 }
