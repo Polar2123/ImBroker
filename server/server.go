@@ -19,15 +19,40 @@ type brokerClient struct {
 	connection net.Conn
 }
 
+var topics = map[string][]brokerClient{}
+
 var payloadCommands = map[string]payloadCommand {
 		"PUB": publish,	
+}
+var nonPayloadCommands = map[string]payloadlessCommand{
+	"SUB": subscribe,
+}
+type payloadCommand func(brokerClient,string, string)
 
+
+func publish(client brokerClient, topic string, payload string){
+	clients,ok := topics[topic]
+	if ok {
+		for _, element := range clients {
+				element.connection.Write([]byte(payload))
+		}
+	} else {
+		fmt.Println("No subscribers!")
 	}
-
-type payloadCommand func(string, string)
-
-func publish(topic string, payload string){
 	fmt.Println(topic + ": " + payload)
+}
+type payloadlessCommand func(brokerClient,string)
+
+func subscribe(client brokerClient, topic string){
+	value, ok := topics[topic]
+	if ok {
+		topics[topic] = append(value,client)
+	} else {
+		slice := make([]brokerClient,1)
+		slice[0] = client
+		topics[topic] = slice
+	}
+	fmt.Println("Broker Client: " + client.id + " has subscribed to " + topic)
 }
 
 
@@ -65,29 +90,34 @@ func handleBrokerConnection(client brokerClient){
 				fmt.Println("Had problems reading from buffer!")
 				break;	
 			}	
-		message := string(buffer[:messageLength])
-		handleMessage(message)
+		message := strings.TrimSpace(string(buffer[:messageLength]))
+		handleMessage(client,message)
 		}
 		fmt.Println("A connection is closing!")
 		
 }
 
-func handleMessage(message string){
+func handleMessage(client brokerClient, message string){
 	parts := strings.SplitN(message, " ", 3) // split message into 3 parts, command, topic and payload, where payload is optional.
 	
 	if len(parts) == 3{
-		handlePayloadCommand(parts)
+		handlePayloadCommand(client,parts)
 	} else if len(parts) == 2{
-		handleCommandWithoutPayload(parts)
+		handleCommandWithoutPayload(client,parts)
 	} else {
 		fmt.Println("Unknown Command Type: " + strings.Join(parts," "))
 	}
 
 }
-func handlePayloadCommand(parts []string){
+func handlePayloadCommand(client brokerClient,parts []string){
 	method, ok := payloadCommands[parts[0]]	
 	if ok {
-		method(parts[1],parts[2])
+		method(client,parts[1],strings.Join(parts[2:]," "))
 	}
 }
-func handleCommandWithoutPayload(parts []string){}
+func handleCommandWithoutPayload(client brokerClient,parts []string){
+	method,ok := nonPayloadCommands[parts[0]]
+	if ok{
+		method(client, parts[1])
+	}
+}
