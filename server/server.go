@@ -3,6 +3,7 @@ import (
         "fmt"
         "net"
         "os"
+				"strings"
 )
 
 const (
@@ -43,9 +44,26 @@ func handleBrokerConnection(connection net.Conn){
 			if err != nil {
 				fmt.Println("Had problems reading from buffer!")
 				break;	
-			}		
-			fmt.Println(string(buffer[:messageLength]))
+			}	
+		message := string(buffer[:messageLength])
+		handleMessage(message)
 		}
 		fmt.Println("A connection is closing!")
 		
 }
+
+func handleMessage(message string){
+	parts := strings.SplitN(message, " ", 3) // split message into 3 parts, command, topic and payload, where payload is optional.
+	
+	if len(parts) == 3{
+		handlePayloadCommand(parts)
+	} else if len(parts) == 2{
+		handleCommandWithoutPayload(parts)
+	} else {
+		fmt.Println("Unknown Command Type: " + strings.Join(parts," "))
+	}
+
+}
+func handlePayloadCommand(parts []string){
+}
+func handleCommandWithoutPayload(parts []string){}
