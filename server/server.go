@@ -42,7 +42,7 @@ func publish(client brokerClient, topic string, payload string){
 				subscribedClient.connection.Write([]byte(payload))
 			}
 		}
-		client.connection.Write([]byte("Message sent successfully!"))
+		client.connection.Write([]byte("Message sent successfully!\n"))
 	} else {
 		client.connection.Write([]byte("No Recipients are Subscribed to this topic!"))
 	}
@@ -62,7 +62,7 @@ func subscribe(client brokerClient, topic string){
 	client.subscribed[topic] = true
 		
 	fmt.Println("Broker Client: " + client.id + " has subscribed to " + topic)
-	client.connection.Write([]byte("Subscribed to the topic: " + topic ))
+	client.connection.Write([]byte("Subscribed to the topic: " + topic + "\n"))
 }
 
 func unsubscribe(client brokerClient, topic string){
@@ -102,7 +102,7 @@ func getClientId(client brokerClient) (id string, ok bool) {
 	buffer := make([]byte,1024)
 	messageLength, err := client.connection.Read(buffer)	
 	if err != nil {
-		fmt.Println("Couldn't read and get connection id! Closing connection.")
+		client.connection.Write([]byte("Couldn't read and get connection id! Closing connection."))
 		return "",false
 	}
 	message := strings.TrimSpace(string(buffer[:messageLength]))
@@ -112,19 +112,19 @@ func getClientId(client brokerClient) (id string, ok bool) {
 		id := parts[1]
 
 		if cmd != "CONN"{
-			fmt.Println("You need to use the CONN command!")
+			client.connection.Write([]byte("You need to use the CONN command!"))
 			return "",false
 		}
 
 		_, ok := brokerClients[id]
 		if ok {
-			fmt.Println("There already exists a connection with this ID!")
+			client.connection.Write([]byte("There already exists a connection with this ID!"))
 			return "",false
 		}
 		return id,true
 
 	} else {
-		fmt.Println("Connection should be started using the CONN <id> Command!")
+		client.connection.Write([]byte("Connection should be started using the CONN <id> Command!"))
 		return "",false
 	}
 	
@@ -139,6 +139,7 @@ func handleBrokerConnection(client brokerClient){
 			client.connection.Close()
 			return
 		}
+	client.connection.Write([]byte("Connected successfully with the id: " + clientId + "\n"))
 		client.id = clientId	
 		client.subscribed = make(map[string]bool)
 		brokerClients[client.id] = client
