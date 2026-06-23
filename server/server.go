@@ -86,18 +86,57 @@ func main(){
 			fmt.Println("Error accepting connection!", err.Error())
 		}
 		var client brokerClient
-		client.id = "exampleId"
 		client.connection = connection
 		go handleBrokerConnection(client)	
 
 
 }
 }
+
+func getClientId(client brokerClient) (id string, ok bool) {
+	buffer := make([]byte,1024)
+	messageLength, err := client.connection.Read(buffer)	
+	if err != nil {
+		fmt.Println("Couldn't read and get connection id! Closing connection.")
+		return "",false
+	}
+	message := strings.TrimSpace(string(buffer[:messageLength]))
+	parts := strings.Split(message, " ")
+	if len(parts) == 2{
+		cmd := parts[0]
+		id := parts[1]
+
+		if cmd != "CONN"{
+			fmt.Println("You need to use the CONN command!")
+			return "",false
+		}
+
+		_, ok := brokerClients[id]
+		if ok {
+			fmt.Println("There already exists a connection with this ID!")
+			return "",false
+		}
+		return id,true
+
+	} else {
+		fmt.Println("Connection should be started using the CONN <id> Command!")
+		return "",false
+	}
+	
+}
+
 func handleBrokerConnection(client brokerClient){
 
 		fmt.Println("Client Connected")
-		brokerClients[client.id] = client
 		buffer := make([]byte, 1024)
+		clientId, ok := getClientId(client)
+		if !ok {
+			client.connection.Close()
+			return
+		}
+		client.id = clientId	
+		brokerClients[client.id] = client
+
 		for {
 			messageLength, err := client.connection.Read(buffer)
 			if err != nil {
