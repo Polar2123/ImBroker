@@ -139,7 +139,7 @@ func handleBrokerConnection(client brokerClient){
 			client.connection.Close()
 			return
 		}
-	client.connection.Write([]byte("Connected successfully with the id: " + clientId + "\n"))
+	client.connection.Write([]byte("CONNACK"))
 		client.id = clientId	
 		client.subscribed = make(map[string]bool)
 		brokerClients[client.id] = client
