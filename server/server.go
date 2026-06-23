@@ -17,7 +17,7 @@ const (
 type brokerClient struct {
 	id string
 	connection net.Conn
-	subscribed []string
+	subscribed map[string]bool
 }
 
 var topics = map[string]map[string]bool{}
@@ -38,12 +38,14 @@ func publish(client brokerClient, topic string, payload string){
 	if ok {
 		for element, _ := range clients {
 			subscribedClient := brokerClients[element]
-			subscribedClient.connection.Write([]byte(payload))
+			if subscribedClient.id != client.id {
+				subscribedClient.connection.Write([]byte(payload))
+			}
 		}
+		client.connection.Write([]byte("Message sent successfully!"))
 	} else {
-		fmt.Println("No subscribers!")
+		client.connection.Write([]byte("No Recipients are Subscribed to this topic!"))
 	}
-	fmt.Println(topic + ": " + payload)
 }
 type payloadlessCommand func(brokerClient,string)
 
@@ -57,9 +59,10 @@ func subscribe(client brokerClient, topic string){
 		topics[topic] = topicMap
 
 	}
-	client.subscribed = append(client.subscribed,topic) 
+	client.subscribed[topic] = true
 		
 	fmt.Println("Broker Client: " + client.id + " has subscribed to " + topic)
+	client.connection.Write([]byte("Subscribed to the topic: " + topic ))
 }
 
 func unsubscribe(client brokerClient, topic string){
@@ -67,6 +70,8 @@ func unsubscribe(client brokerClient, topic string){
 	if ok {
 		delete(value,client.id)	
 	}
+	delete(client.subscribed,topic)
+	client.connection.Write([]byte("Unsubscribed from the topic: " + topic + "\n") )
 }
 
 func main(){
@@ -135,6 +140,7 @@ func handleBrokerConnection(client brokerClient){
 			return
 		}
 		client.id = clientId	
+		client.subscribed = make(map[string]bool)
 		brokerClients[client.id] = client
 
 		for {
@@ -152,7 +158,7 @@ func handleBrokerConnection(client brokerClient){
 
 func removeClient(client brokerClient){
 	delete(brokerClients,client.id)
-	for _, topic := range client.subscribed {
+	for topic, _ := range client.subscribed {
 	createdTopic, ok := topics[topic]
 		if ok {
 			delete(createdTopic,client.id)
