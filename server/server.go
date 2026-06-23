@@ -150,6 +150,20 @@ func handleBrokerConnection(client brokerClient){
 		
 }
 
+func removeClient(client brokerClient){
+	delete(brokerClients,client.id)
+	for _, topic := range client.subscribed {
+	createdTopic, ok := topics[topic]
+		if ok {
+			delete(createdTopic,client.id)
+			if len(createdTopic) == 0{
+				delete(topics,topic)
+			}
+		}
+			
+	}
+}
+
 func handleMessage(client brokerClient, message string){
 	parts := strings.SplitN(message, " ", 3) // split message into 3 parts, command, topic and payload, where payload is optional.
 	
