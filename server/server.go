@@ -8,7 +8,6 @@ import (
 
 const (
 
-
 	SERVER_HOST = "localhost"
 	SERVER_PORT = "9988"
 	SERVER_TYPE = "tcp"	
@@ -32,14 +31,13 @@ var nonPayloadCommands = map[string]payloadlessCommand{
 }
 type payloadCommand func(brokerClient,string, string)
 
-
 func publish(client brokerClient, topic string, payload string){
 	clients,ok := topics[topic]
 	if ok {
 		for element, _ := range clients {
 			subscribedClient := brokerClients[element]
 			if subscribedClient.id != client.id {
-				subscribedClient.connection.Write([]byte(topic + " " + payload))
+				subscribedClient.connection.Write([]byte(client.id + " " + topic + " " + payload))
 			}
 		}
 		client.connection.Write([]byte("Message sent successfully!\n"))
