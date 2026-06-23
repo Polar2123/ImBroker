@@ -39,7 +39,7 @@ func publish(client brokerClient, topic string, payload string){
 		for element, _ := range clients {
 			subscribedClient := brokerClients[element]
 			if subscribedClient.id != client.id {
-				subscribedClient.connection.Write([]byte(payload))
+				subscribedClient.connection.Write([]byte(topic + " " + payload))
 			}
 		}
 		client.connection.Write([]byte("Message sent successfully!\n"))
@@ -62,7 +62,7 @@ func subscribe(client brokerClient, topic string){
 	client.subscribed[topic] = true
 		
 	fmt.Println("Broker Client: " + client.id + " has subscribed to " + topic)
-	client.connection.Write([]byte("Subscribed to the topic: " + topic + "\n"))
+	client.connection.Write([]byte("SUBACK"))
 }
 
 func unsubscribe(client brokerClient, topic string){
