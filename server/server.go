@@ -153,7 +153,7 @@ func handleBrokerConnection(client brokerClient){
 		handleMessage(client,message)
 		}
 		fmt.Println("A connection is closing!")
-		
+		removeClient(client)	
 }
 
 func removeClient(client brokerClient){
